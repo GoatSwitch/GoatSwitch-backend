@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package gs.services.ut_generator;
+
+import "gs_common/proto/common.proto";
+
+option csharp_namespace = "API_Gateway.Models.UTGenerator.Proto";
+
+service ut_generator {
+  // Generates unittests for the given CodeProject
+  rpc generate_unittests(UTGeneratorRequest)
+      returns (UTGeneratorResponse);
+}
+
+// Following outcomes are possible:
+// - Generation was successfull
+// - Generation failed / no solution found
+// - Error occured before, during or after generation
+
+enum ReturnCode {
+  SUCCESS = 0;
+  ERROR = 1;
+  FAILED = 2;
+}
+
+message UTGeneratorRequest {
+
+  // Project to be tested
+  gs.common.CodeProject source_project = 1 [ json_name = "source_project" ];
+
+  // Current test project if available
+  gs.common.CodeProject test_project = 2 [ json_name = "test_project" ];
+
+  // TargetLanguage
+  string target_language = 3 [ json_name = "target_language" ];
+
+  // Instruction for improving
+  string instruction = 4 [ json_name = "instruction" ];
+
+}
+
+message UTGeneratorResponse {
+  // Output CodeProject if generation was successfull
+  repeated gs.common.CodeProject solutions = 1;
+
+  // Error message if an error occured
+  string error = 2;
+
+  // Return code from unittest generation
+  ReturnCode return_code = 3;
+}

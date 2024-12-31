@@ -1,0 +1,48 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: api-gateway
+  labels:
+    app: api-gateway
+spec:
+  selector:
+    app: api-gateway
+  ports:
+    - protocol: TCP
+      name: http
+      port: 80
+      targetPort: 5000
+    - protocol: TCP
+      name: https
+      port: 5050
+      targetPort: 5050
+  type: LoadBalancer
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  labels:
+    app: api-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "api-gateway"
+        dapr.io/enable-api-logging: "true"
+    spec:
+      containers:
+        - name: api-gateway
+          image: goatswitch_gateway:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5000
+            - containerPort: 5050

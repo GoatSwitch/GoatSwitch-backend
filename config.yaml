@@ -1,0 +1,42 @@
+# valid models (outdated): gpt-4o-2024-05-13, code-bison, codechat-bison, code-gecko
+# valid claude models: claude-3-haiku-20240307, claude-3-opus-20240229
+# valid Azure models (see azure deployments, should contain "GS-"): GS-GPT4o (this one is using version 2024-08-xx)
+# model: "o1-preview" # need to refactor to not use system message
+
+# tl_model: "claude-3-5-sonnet-20241022"
+# tl_model: "GS-GPT4o"
+# tl_model: "GS-GPT4o-mini"
+tl_model: "GS-GPT4o"
+n_tl_generations: 10
+tl_temperature: 0.3
+
+ut_model: "GS-GPT4o"
+n_ut_generations: 5
+ut_temperature: 0.8
+
+gslite_tl_model: "GS-GPT4o-global"
+n_gslite_tl_generations: 2
+gslite_tl_temperature: 0.1
+
+gslite_ut_model: "GS-GPT4o-global"
+n_gslite_ut_generations: 2
+gslite_ut_temperature: 0.1
+
+backup_model: "claude-3-5-sonnet-20241022"
+# backup_model: "claude-3-5-haiku-20241022"
+# backup_model: "GS-GPT4o"
+# backup_model: "gpt-4o-2024-08-06"
+# backup_model: "gpt-4o-mini"
+
+# path to a llm_output.json from backup, e.g. "llm_output/llm_output_20240510-173409.json"
+# set null to disable debugging
+ut_gen_debug_output: null
+tl_gen_debug_output: null
+gslite_tl_gen_debug_output: null
+gslite_ut_gen_debug_output: null
+
+backup_base_dir: "/mnt/gs-vault"
+# windows automatically converts this to C:\mnt\gs-vault
+
+# flags for special mvp modes
+mode_ut_gen_use_nunit_dummy_test_project: False

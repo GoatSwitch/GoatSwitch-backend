@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package gs.services.tl_generator;
+
+import "gs_common/proto/common.proto";
+
+option csharp_namespace = "API_Gateway.Models.TLGenerator.Proto";
+
+service tl_generator {
+  // Generates translations for the given CodeProject
+  rpc generate_translations(TLGeneratorRequest)
+      returns (TLGeneratorResponse);
+}
+
+// Following outcomes are possible:
+// - Generation was successfull
+// - Generation failed / no solution found
+// - Error occured before, during or after generation
+
+enum ReturnCode {
+  SUCCESS = 0;
+  ERROR = 1;
+  FAILED = 2;
+}
+
+message TLGeneratorRequest {
+  // Project to be translated
+  gs.common.CodeProject source_project = 1 [ json_name = "source_project" ];
+
+  // TargetLanguage
+  string target_language = 2 [ json_name = "target_language" ];
+
+  // Prompt to be used for the translation (not used if model = upgrade_assistant)
+  string instruction = 3 [ json_name = "instruction" ];
+
+  // Model (e.g. "gpt-3.5-turbo-1106", "UPGRADE_DOTNET_PROJECT")
+  string model = 4 [ json_name = "model" ];
+}
+
+message TLGeneratorResponse {
+  // Generated translation candidates
+  repeated gs.common.CodeProject solutions = 1;
+
+  // Error message if an error occured
+  string error = 2;
+
+  // Return code
+  ReturnCode return_code = 3;
+}
+
+message Operation {
+  // Operation name
+  string operation_name = 1;
+
+  // Operation description
+  string description = 2;
+}
+
+message AIPlan {
+  // list of operations
+  repeated Operation operations = 1;
+}
+
+message PlanGeneratorResponse {
+  // Generated plan
+  AIPlan plan = 1;
+
+  // Error message if an error occured
+  string error = 2;
+
+  // Return code
+  ReturnCode return_code = 3;
+}

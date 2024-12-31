@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package gs.services.ut_picker;
+
+import "gs_common/proto/common.proto";
+
+option csharp_namespace = "API_Gateway.Models.UTPicker.Proto";
+
+service ut_picker {
+  // Generates unittests for the given CodeProject
+  rpc pick_unittests(UTPickerRequest)
+      returns (UTPickerResponse);
+}
+
+// Following outcomes are possible:
+// 1. Solution is generated successfully
+// 2. Error while trying to compile the source project
+// 3. Error in compiling the test project
+// 4. Error in running the test project -> all tests failed
+
+// 1 is the best case: error should be empty and solution should be filled, it
+// is verified
+
+// 2 the env is not set up properly, this cannot be fixed by prompting the user
+// Here the user should get the error message but no candidate solution
+// Error message should be filled, but solution should be empty
+
+// 3 and 4 the user might wanna prompt and fix that way
+// Here the user should get the error message and the candidate solution
+//
+
+enum ReturnCode {
+  SUCCESS = 0;
+  ERROR = 1;
+  FAILED_SOURCE_COMPILE = 2;
+  FAILED_TEST_COMPILE = 3;
+  FAILED_TEST_EXECUTION = 4;
+}
+
+message UTPickerRequest {
+  // Project to be tested
+  gs.common.CodeProject source_project = 1 [ json_name = "source_project" ];
+
+  // TargetLanguage
+  string target_language = 2 [ json_name = "target_language" ];
+
+  // Tests
+  repeated gs.common.CodeProject test_projects = 3
+      [ json_name = "test_projects" ];
+}
+
+message UTPickerResponse {
+  // Output CodeProject if generation was successfull
+  gs.common.CodeProject solution = 1;
+
+  // Unittests output XML
+  string test_output = 2;
+
+  // Error message if an error occured
+  string error = 3;
+
+  // Return code from unittest generation
+  ReturnCode return_code = 4;
+}

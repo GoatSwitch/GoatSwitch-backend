@@ -1,0 +1,188 @@
+name: Deploy-code-executor
+on:
+  workflow_dispatch: {}
+env:
+  ACR_RESOURCE_GROUP: GoatSwitchAI_Azuresponsored
+  AZURE_CONTAINER_REGISTRY: goatswitch
+  CLUSTER_NAME: GoatSwitchCluster2
+  CLUSTER_RESOURCE_GROUP: GoatSwitchAI_Azuresponsored
+  CONTAINER_NAME: goatswitch_code_executor
+  DEPLOYMENT_MANIFEST_PATH: |
+    ./deploy/code-executor.yaml
+jobs:
+  buildImage:
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: windows-latest
+    steps:
+      - name: Install containerd
+        run: |
+          # Download and extract desired containerd Windows binaries
+          $Version="1.7.13" # update to your preferred version
+          curl.exe -L https://github.com/containerd/containerd/releases/download/v$Version/containerd-$Version-windows-amd64.tar.gz -o containerd-windows-amd64.tar.gz
+          tar.exe xvf .\containerd-windows-amd64.tar.gz
+           
+          # Copy and configure
+          Copy-Item -Path ".\bin" -Destination "$Env:ProgramFiles\containerd" -Recurse -Container:$false -Force
+          $pastPWD=$PWD
+          cd $Env:ProgramFiles\containerd\
+          .\containerd.exe config default | Out-File config.toml -Encoding ascii
+          cd $pastPWD
+          # Copy
+          Copy-Item -Path .\bin\* -Destination (New-Item -Type Directory $Env:ProgramFiles\containerd -Force) -Recurse -Force
+           
+          # add the binaries (containerd.exe, ctr.exe) in $env:Path
+          $Path = [Environment]::GetEnvironmentVariable("PATH", "Machine") + [IO.Path]::PathSeparator + "$Env:ProgramFiles\containerd"
+          [Environment]::SetEnvironmentVariable( "Path", $Path, "Machine")
+          # reload path, so you don't have to open a new PS terminal later if needed
+          $Env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+           
+          # configure
+          containerd.exe config default | Out-File $Env:ProgramFiles\containerd\config.toml -Encoding ascii
+          # Review the configuration. Depending on setup you may want to adjust:
+          # - the sandbox_image (Kubernetes pause image)
+          # - cni bin_dir and conf_dir locations
+          Get-Content $Env:ProgramFiles\containerd\config.toml
+           
+          # Register and start service
+          containerd.exe --register-service
+          Start-Service containerd
+        shell: powershell
+      - name: Setup CNI
+        run: |
+          $networkName = 'nat'
+          # Get-HnsNetwork is available once you have enabled the 'Hyper-V Host Compute Service' feature
+          # which must have been done at the Quick setup above
+          # Enable-WindowsOptionalFeature -Online -FeatureName containers -All
+          # Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All -All
+          # the default one named `nat` should be available
+          $natInfo = Get-HnsNetwork -ErrorAction Ignore | Where-Object { $_.Name -eq $networkName }
+          if ($null -eq $natInfo) {
+              throw "NAT network not found, check if you enabled containers, Hyper-V features and restarted the machine"
+          }
+          $gateway = $natInfo.Subnets[0].GatewayAddress
+          $subnet = $natInfo.Subnets[0].AddressPrefix
+
+          $cniConfPath = "$env:ProgramFiles\containerd\cni\conf\0-containerd-nat.conf"
+          $cniBinDir = "$env:ProgramFiles\containerd\cni\bin"
+          $cniVersion = "0.3.0"
+
+          # get the CNI plugins (binaries)
+          mkdir $cniBinDir -Force
+          curl.exe -LO https://github.com/microsoft/windows-container-networking/releases/download/v$cniVersion/windows-container-networking-cni-amd64-v$cniVersion.zip
+          tar xvf windows-container-networking-cni-amd64-v$cniVersion.zip -C $cniBinDir
+
+          $natConfig = @"
+          {
+              "cniVersion": "$cniVersion",
+              "name": "$networkName",
+              "type": "nat",
+              "master": "Ethernet",
+              "ipam": {
+                  "subnet": "$subnet",
+                  "routes": [
+                      {
+                          "gateway": "$gateway"
+                      }
+                  ]
+              },
+              "capabilities": {
+                  "portMappings": true,
+                  "dns": true
+              }
+          }
+          "@
+          Set-Content -Path $cniConfPath -Value $natConfig
+        shell: powershell
+      - name: Install buildkit
+        run: |
+          $version = "v0.13.2" # specify the release version, v0.13+
+          $arch = "amd64" # arm64 binary available too
+          curl.exe -LO https://github.com/moby/buildkit/releases/download/$version/buildkit-$version.windows-$arch.tar.gz
+          # there could be another `.\bin` directory from containerd instructions
+          # you can move those
+          mv bin bin2
+          tar.exe xvf .\buildkit-$version.windows-$arch.tar.gz
+          # after the binaries are extracted in the bin directory
+          # move them to an appropriate path in your $Env:PATH directories or:
+          Copy-Item -Path ".\bin" -Destination "$Env:ProgramFiles\buildkit" -Recurse -Force
+          # add `buildkitd.exe` and `buildctl.exe` binaries in the $Env:PATH
+          $Path = [Environment]::GetEnvironmentVariable("PATH", "Machine") + `
+              [IO.Path]::PathSeparator + "$Env:ProgramFiles\buildkit"
+          [Environment]::SetEnvironmentVariable( "Path", $Path, "Machine")
+          $Env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + `
+              [System.Environment]::GetEnvironmentVariable("Path","User")
+          buildkitd.exe --register-service --debug --containerd-worker=true --service-name buildkitd --containerd-cni-config-path="$Env:ProgramFiles\containerd\cni\conf\0-containerd-nat.conf" --containerd-cni-binary-dir="$Env:ProgramFiles\containerd\cni\bin"
+          Start-Service buildkitd
+        shell: powershell
+      - uses: docker/setup-buildx-action@v3.2.0
+        with:
+          driver: remote
+          endpoint: npipe:////./pipe/buildkitd
+      - name: Verify buildx
+        run: |
+          docker buildx inspect
+        shell: powershell
+
+      - uses: actions/checkout@v3
+      - uses: azure/login@92a5484dfaf04ca78a94597f4f19fea633851fa2
+        name: Azure login
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+      - name: Login to Azure Container Registry
+        run: az acr login --name ${{ env.AZURE_CONTAINER_REGISTRY }} -p ${{ secrets.AZ_ACR_SECRET }} -u ${{ secrets.AZURE_CLIENT_ID }}
+        shell: powershell
+      - name: Set IMAGENAME environment variable
+        run: echo "IMAGENAME=${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:latest" >> $env:GITHUB_ENV
+        shell: powershell
+      - name: Set IMAGETAG environment variable
+        run: echo "IMAGETAG=${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:${{ github.sha }}" >> $env:GITHUB_ENV
+        shell: powershell
+      - name: Trigger ACR Build
+        run: |
+          docker buildx build --push -t ${{ env.IMAGENAME }} -t ${{ env.IMAGETAG }} --cache-to type=inline --cache-from type=registry,ref=${{ env.IMAGENAME }} --platform windows -f src\code_executor\Dockerfiles\windows.Dockerfile .  --build-arg OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} --build-arg AZURE_OPENAI_API_KEY=${{ secrets.AZURE_OPENAI_API_KEY }}
+        shell: powershell
+      #- name: Run unittests
+      #  run: |
+      #    docker images
+      #    docker run --entrypoint "pytest" --rm -v test:C:\app\test ${{ env.IMAGENAME }} .\test\code_executor
+      #  shell: powershell
+  deploy:
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+    runs-on: windows-latest
+    needs:
+      - buildImage
+    steps:
+      - uses: actions/checkout@v3
+      - uses: azure/login@92a5484dfaf04ca78a94597f4f19fea633851fa2
+        name: Azure login
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+      - name: Login to Azure Container Registry
+        run: az acr login --name ${{ env.AZURE_CONTAINER_REGISTRY }} -p ${{ secrets.AZ_ACR_SECRET }} -u ${{ secrets.AZURE_CLIENT_ID }}
+        shell: powershell
+      - name: Setup kubelogin
+        uses: Azure/use-kubelogin@v1
+        with:
+          kubelogin-version: v0.1.4
+      - uses: azure/aks-set-context@v3
+        name: Get K8s context
+        with:
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
+          use-kubelogin: "true"
+      - uses: Azure/k8s-deploy@v4
+        name: Deploys application
+        with:
+          action: deploy
+          images: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:${{ github.sha }}
+          manifests: ${{ env.DEPLOYMENT_MANIFEST_PATH }}
+          namespace: default

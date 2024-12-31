@@ -1,0 +1,53 @@
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: appconfig
+  namespace: default
+spec:
+  metrics:
+    enabled: true
+  tracing:
+    samplingRate: "1"
+    stdout: false
+    otel:
+      endpointAddress: "otlp-router.dapr-monitoring.svc.cluster.local:4317"
+      protocol: "grpc"
+      isSecure: false
+  features:
+    - name: Resiliency
+      enabled: true
+  logging:
+    apiLogging:
+      enabled: true
+      obfuscateURLs: false
+      omitHealthChecks: true
+  apiSpec:
+    maxRequestBodySize: 128
+    maxResponseBodySize: 128
+---
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: appconfig-win
+  namespace: default
+spec:
+  metrics:
+    enabled: true
+  tracing:
+    samplingRate: "1"
+    stdout: false
+    otel:
+      endpointAddress: "otlp-win-router.dapr-monitoring.svc.cluster.local:4317"
+      protocol: "grpc"
+      isSecure: false
+  features:
+    - name: Resiliency
+      enabled: true
+  logging:
+    apiLogging:
+      enabled: true
+      obfuscateURLs: false
+      omitHealthChecks: true
+  apiSpec:
+    maxRequestBodySize: 128
+    maxResponseBodySize: 128

@@ -1,0 +1,74 @@
+name: Deploy-code-executor-java
+on:
+  workflow_dispatch: {}
+env:
+  ACR_RESOURCE_GROUP: GoatSwitchAI_Azuresponsored
+  AZURE_CONTAINER_REGISTRY: goatswitch
+  CLUSTER_NAME: GoatSwitchCluster2
+  CLUSTER_RESOURCE_GROUP: GoatSwitchAI_Azuresponsored
+  CONTAINER_NAME: goatswitch_code_executor_java
+  DOCKERFILE_PATH: ./src/code_executor/Dockerfiles/java.Dockerfile
+  DEPLOYMENT_MANIFEST_PATH: |
+    ./deploy/code-executor-java.yaml
+jobs:
+  buildImage:
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: azure/login@v1
+        name: Azure login
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+      - name: Login to Azure Container Registry
+        run: az acr login --name ${{ env.AZURE_CONTAINER_REGISTRY }} -p ${{ secrets.AZ_ACR_SECRET }} -u ${{ secrets.AZURE_CLIENT_ID }}
+      - name: Build and push image to ACR
+        run: |
+          IMAGENAME=${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:latest
+          IMAGETAG=${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:${{ github.sha }}
+          docker buildx build --push -f ${{ env.DOCKERFILE_PATH}} -t ${IMAGENAME} -t ${IMAGETAG} --cache-to type=inline --cache-from type=registry,ref=${IMAGENAME} ./ --platform linux/x86_64
+      #- name: Run unittests
+      #  run: |
+      #    docker images
+      #    docker run --entrypoint "pytest" --rm -v test:C:\app\test ${{ env.IMAGENAME }} .\test\goat_service
+      #  shell: powershell
+
+  deploy:
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+    runs-on: ubuntu-latest
+    needs:
+      - buildImage
+    steps:
+      - uses: actions/checkout@v3
+      - uses: azure/login@92a5484dfaf04ca78a94597f4f19fea633851fa2
+        name: Azure login
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+      - name: Login to Azure Container Registry
+        run: az acr login --name ${{ env.AZURE_CONTAINER_REGISTRY }} -p ${{ secrets.AZ_ACR_SECRET }} -u ${{ secrets.AZURE_CLIENT_ID }}
+      - name: Setup kubelogin
+        uses: Azure/use-kubelogin@v1
+        with:
+          kubelogin-version: v0.1.4
+      - uses: azure/aks-set-context@v3
+        name: Get K8s context
+        with:
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
+          use-kubelogin: "true"
+      - uses: Azure/k8s-deploy@v4
+        name: Deploys application
+        with:
+          action: deploy
+          images: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:${{ github.sha }}
+          manifests: ${{ env.DEPLOYMENT_MANIFEST_PATH }}
+          namespace: default

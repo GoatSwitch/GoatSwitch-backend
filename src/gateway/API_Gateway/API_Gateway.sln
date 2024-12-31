@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# 
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "API_Gateway", "API_Gateway\API_Gateway.csproj", "{06946EF3-DF95-49EC-A8C8-C45E2E8AA048}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "API_Gateway.Tests", "API_Gateway.Tests\API_Gateway.Tests.csproj", "{EC192CBE-3332-45D9-95B6-A72726EDAFB6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{06946EF3-DF95-49EC-A8C8-C45E2E8AA048}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{06946EF3-DF95-49EC-A8C8-C45E2E8AA048}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{06946EF3-DF95-49EC-A8C8-C45E2E8AA048}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{06946EF3-DF95-49EC-A8C8-C45E2E8AA048}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC192CBE-3332-45D9-95B6-A72726EDAFB6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC192CBE-3332-45D9-95B6-A72726EDAFB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC192CBE-3332-45D9-95B6-A72726EDAFB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC192CBE-3332-45D9-95B6-A72726EDAFB6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

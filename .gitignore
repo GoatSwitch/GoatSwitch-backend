@@ -1,0 +1,16 @@
+*.pyc
+**/*.log
+**/GoatSwitch
+**/generated
+
+src/gateway/API_Gateway/API_Gateway/wwwroot/index.html
+gs-vault/
+.mono/
+.DS_STORE
+
+**/node_modules/**
+**/bin/**
+**/obj/**
+**/.angular/**
+
+!test/logs/*.log

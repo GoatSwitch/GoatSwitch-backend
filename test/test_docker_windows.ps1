@@ -1,0 +1,2 @@
+# docker run --rm -e ENABLE_OTEL_LOG_HANDLER=false -v ${PWD}\test:C:\app\test -v C:\mnt\gs-vault:C:\mnt\gs-vault goatswitch_goat_service pytest test\goat_service
+docker run --rm -e ENABLE_OTEL_LOG_HANDLER=false -v ${PWD}\test:C:\app\test -v ${PWD}\dataset:C:\app\dataset goatswitch_code_executor pytest test\code_executor -k "dotnet"

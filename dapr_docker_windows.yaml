@@ -1,0 +1,38 @@
+version: 1
+common:
+  appProtocol: grpc
+  logLevel: info
+  resourcesPath: ./app/components # any dapr resources to be shared across apps
+  configFilePath: ./app/config.yaml
+  daprHTTPMaxRequestSize: 128
+  daprHTTPMaxResponseSize: 128
+
+apps:
+  - appID: api-gateway
+    appDirPath: "./src/gateway/API_Gateway/API_Gateway"
+    appPort: 4998
+    command: ["dotnet", "run", "--environment", "Development", "-c", "Debug"]
+  - appID: goat-service
+    appDirPath: "./"
+    appPort: 4999
+    command: ["python", "src/goat_service/main.py"]
+    env:
+      DAPR_HOST_IP: "host.docker.internal"
+  - appID: code-executor
+    appDirPath: "./"
+    appPort: 5001
+    command:
+      [
+        "docker",
+        "run",
+        "--rm",
+        "--cpus",
+        "8",
+        "--memory",
+        "12g",
+        "-p",
+        "5001:5001",
+        "-e",
+        "ENABLE_OTEL_LOG_HANDLER=false",
+        "goatswitch_code_executor",
+      ]

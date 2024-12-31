@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: code-executor-java
+  labels:
+    app: code-executor-java
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: code-executor-java
+  template:
+    metadata:
+      labels:
+        app: code-executor-java
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "code-executor-java"
+        dapr.io/app-port: "5001"
+        dapr.io/app-protocol: "grpc"
+        dapr.io/config: "appconfig"
+        dapr.io/log-as-json: "true"
+        dapr.io/app-max-concurrency: "1"
+    spec:
+      containers:
+        - name: code-executor-java
+          image: goatswitch.azurecr.io/goatswitch_code_executor_java:latest
+          imagePullPolicy: Always
+      nodeSelector:
+        agentpool: spotpool
+      tolerations:
+        - key: "kubernetes.azure.com/scalesetpriority"
+          operator: "Equal"
+          value: "spot"
+          effect: "NoSchedule"
+        - key: "os"
+          operator: "Equal"
+          value: "linux"
+          effect: "NoSchedule"

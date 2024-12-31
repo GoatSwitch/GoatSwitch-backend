@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: goat-service
+  labels:
+    app: goat-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: goat-service
+  template:
+    metadata:
+      labels:
+        app: goat-service
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "goat-service"
+        dapr.io/app-port: "4999"
+        dapr.io/app-protocol: "grpc"
+        dapr.io/config: "appconfig"
+        dapr.io/log-as-json: "true"
+    spec:
+      containers:
+        - name: goat-service
+          image: goatswitch.azurecr.io/goatswitch_goat_service:latest
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /mnt/gs-vault
+              name: volume
+              readOnly: false
+      volumes:
+        - name: volume
+          persistentVolumeClaim:
+            claimName: gs-vault
+      nodeSelector:
+        agentpool: spotpool
+      tolerations:
+        - key: "kubernetes.azure.com/scalesetpriority"
+          operator: "Equal"
+          value: "spot"
+          effect: "NoSchedule"
+        - key: "os"
+          operator: "Equal"
+          value: "linux"
+          effect: "NoSchedule"

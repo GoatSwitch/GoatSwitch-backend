@@ -1,0 +1,7 @@
+build
+*egg-info
+# those are protobuff generated files
+gs_common/proto/*_pb2*
+# libraries required for buildig the package
+eggs
+.eggs

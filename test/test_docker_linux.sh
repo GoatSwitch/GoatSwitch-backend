@@ -1,0 +1,1 @@
+docker run --rm -v ${PWD}/test:/app/test -v ${PWD}/dataset:/app/dataset goatswitch_code_executor_java pytest test/code_executor -k "java"

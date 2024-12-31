@@ -1,0 +1,6 @@
+[submodule "dataset/demo-projects"]
+	path = dataset/demo-projects
+	url = git@ssh.dev.azure.com:v3/GoatSwitchAI/demo-projects/demo-projects
+[submodule "dataset/private-projects/internal-testing"]
+	path = dataset/private-projects/internal-testing
+	url = git@ssh.dev.azure.com:v3/GoatSwitchAI/private-projects/internal-testing

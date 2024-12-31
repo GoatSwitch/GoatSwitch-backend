@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Protobuf_ProtoRoot>../../../../tools/gs_common</Protobuf_ProtoRoot>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Azure.Data.Tables" Version="12.8.3" />
+      <PackageReference Include="Dapr.AspNetCore" Version="1.11.0" />
+      <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.7.0" />
+      <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.7.0" />
+      <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.7.0" />
+      <PackageReference Include="Grpc.Tools" Version="2.49.0" PrivateAssets="All" />
+      <PackageReference Include="Google.Api.CommonProtos" Version="2.2.0" />
+        
+      <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.9" />
+      <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.5" />
+      <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="5.1.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="RestSharp" Version="110.2.0" />
+      <PackageReference Include="Serilog" Version="3.0.1" />
+      <PackageReference Include="Serilog.AspNetCore" Version="7.0.0" />
+      <PackageReference Include="Serilog.Settings.Configuration" Version="7.0.1" />
+      <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
+      <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+      <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+    <Protobuf Include="$(Protobuf_ProtoRoot)/gs_common/proto/common.proto" GrpcServices="Client" Link="Proto/common.proto" />
+    <Protobuf Include="$(Protobuf_ProtoRoot)/gs_common/proto/ut_picker.proto" GrpcServices="Client" Link="Proto/ut_picker.proto" />
+    <Protobuf Include="$(Protobuf_ProtoRoot)/gs_common/proto/ut_generator.proto" GrpcServices="Client" Link="Proto/ut_generator.proto" />
+    <Protobuf Include="$(Protobuf_ProtoRoot)/gs_common/proto/tl_generator.proto" GrpcServices="Client" Link="Proto/tl_generator.proto" />
+    <Protobuf Include="$(Protobuf_ProtoRoot)/gs_common/proto/tl_picker.proto" GrpcServices="Client" Link="Proto/tl_picker.proto" />
+  </ItemGroup>
+
+</Project>

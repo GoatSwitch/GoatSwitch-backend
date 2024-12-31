@@ -1,0 +1,27 @@
+apiVersion: dapr.io/v1alpha1
+kind: Resiliency
+metadata:
+  name: dapr-resiliency-policy
+  namespace: default
+spec:
+  policies:
+    timeouts:
+      general: 600s
+
+    retries:
+      # retry policy definitions
+      retry3Times:
+        policy: exponential
+        maxInterval: 60s
+        maxRetries: 15
+
+  targets:
+    apps:
+      # apps and their applied policies here
+      api-gateway:
+        timeout: general
+      goat-service:
+        timeout: general
+        retry: retry3Times
+      code-executor:
+        timeout: general

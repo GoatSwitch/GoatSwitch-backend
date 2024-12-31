@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package gs.common;
+
+option csharp_namespace = "API_Gateway.Models.Proto";
+
+message CodeFile {
+  // Name of the file
+  string file_name = 1 [ json_name = "file_name" ];
+  // Code content of the file
+  string source_code = 2 [ json_name = "source_code" ];
+}
+
+message CodeProject {
+  // Language of the project. Single files may be different (e.g.
+  // Docker)
+  string source_language = 1 [ json_name = "source_language" ];
+  // List of files in the project
+  repeated CodeFile files = 2 [ json_name = "files" ];
+  // List of reference files in the project
+  repeated CodeFile reference_files = 3 [ json_name = "reference_files" ];
+  // Name the project should be displayd as
+  string display_name = 4 [ json_name = "display_name" ];
+}

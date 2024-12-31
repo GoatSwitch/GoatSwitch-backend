@@ -1,0 +1,57 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: api-gateway
+  labels:
+    app: api-gateway
+spec:
+  selector:
+    app: api-gateway
+  ports:
+    - protocol: TCP
+      name: http
+      port: 80
+      targetPort: 5000
+  type: LoadBalancer
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  labels:
+    app: api-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "api-gateway"
+        dapr.io/config: "appconfig"
+        dapr.io/log-as-json: "true"
+    spec:
+      containers:
+        - name: api-gateway
+          image: goatswitch.azurecr.io/goatswitch_gateway
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /mnt/gs-vault
+              name: volume
+              readOnly: false
+          ports:
+            - containerPort: 5000
+      volumes:
+        - name: volume
+          persistentVolumeClaim:
+            claimName: gs-vault
+      tolerations:
+        - key: "os"
+          operator: "Equal"
+          value: "linux"
+          effect: "NoSchedule"

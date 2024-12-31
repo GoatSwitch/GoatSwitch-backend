@@ -1,0 +1,49 @@
+name: Run CI Benchmark
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 4 * * 0' # Runs every Sunday at 4:00 AM
+
+env:
+  ACR_RESOURCE_GROUP: GoatSwitchAI_Azuresponsored
+  AZURE_CONTAINER_REGISTRY: goatswitch
+  GS_API_KEY: ${{ secrets.GS_API_KEY }}
+
+jobs:
+    run_ci_benchmark:
+        permissions:
+            contents: read
+            id-token: write
+        runs-on: ubuntu-latest
+        steps:
+            - name: checkout w ssh_key 
+              uses: actions/checkout@v3
+              with:
+                ssh-key: ${{ secrets.SSH_KEY }}
+                submodules: true
+
+            - name: Set up Python
+              uses: actions/setup-python@v2
+              with:
+                python-version: '3.11'
+
+            - name: Set $PYTHONPATH as environment variable
+              env:
+                  PYTHONPATH: .
+              run: echo "$PYTHONPATH"
+            
+            - name: Install dependencies
+              run: |
+                pip install --upgrade pip
+                pip install --upgrade setuptools
+                grep -v "gs_common" requirements.txt | pip install -r /dev/stdin
+                pip install pytest pytest-xdist signalrcore
+                pip install ./tools/gs_common
+                pip install ./tools/gs_client
+
+            - name: run benchmark tests
+              run: |
+                export RUN_ID=$(uuidgen | tr -d "-")
+                echo $RUN_ID
+                pytest test/test_ci_benchmark.py -n 4 -v

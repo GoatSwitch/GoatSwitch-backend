@@ -1,0 +1,17 @@
+version: 1
+common:
+  appProtocol: grpc
+  logLevel: info
+  resourcesPath: ./app/components # any dapr resources to be shared across apps
+  configFilePath: ./app/config.yaml
+  daprHTTPMaxRequestSize: 128
+  daprHTTPMaxResponseSize: 128
+
+apps:
+  - appID: code-executor # (dotnet)
+    appDirPath: "./"
+    appPort: 5001
+    command: ["python", "src/code_executor/main.py"]
+    env:
+      ENABLE_OTEL_LOG_HANDLER: "false"
+

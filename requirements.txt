@@ -1,0 +1,17 @@
+langchain==0.3.3
+langchain-anthropic==0.2.3
+langchain-community==0.3.2
+langchain-core==0.3.10
+langchain_openai==0.2.2
+pytest==7.4.2
+dapr==1.12.1
+dapr-ext-grpc==1.12.0
+rapidfuzz==3.6.1
+opentelemetry-api==1.24.0
+opentelemetry-exporter-otlp==1.24.0
+opentelemetry-sdk==1.24.0
+junitparser==3.1.2
+sql_metadata==2.13.0
+# gs_common dependencies
+# grpcio_tools==1.50.0
+./tools/gs_common

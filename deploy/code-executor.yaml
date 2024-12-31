@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: code-executor
+  labels:
+    app: code-executor
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: code-executor
+  template:
+    metadata:
+      labels:
+        app: code-executor
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "code-executor"
+        dapr.io/app-port: "5001"
+        dapr.io/app-protocol: "grpc"
+        dapr.io/config: "appconfig-win"
+        dapr.io/log-as-json: "true"
+    spec:
+      containers:
+        - name: code-executor
+          image: goatswitch.azurecr.io/goatswitch_code_executor:latest
+          imagePullPolicy: Always
+      nodeSelector:
+        agentpool: winnp
+      tolerations:
+        - key: "kubernetes.azure.com/scalesetpriority"
+          operator: "Equal"
+          value: "spot"
+          effect: "NoSchedule"
+        - key: "os"
+          operator: "Equal"
+          value: "windows"
+          effect: "NoSchedule"

@@ -1,0 +1,5 @@
+employees:
+  - name: Bill Gates
+    role: Developer
+  - name: Paul Allen
+    role: Developer

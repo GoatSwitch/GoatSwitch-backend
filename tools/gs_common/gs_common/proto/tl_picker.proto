@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package gs.services.tl_picker;
+
+import "gs_common/proto/common.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "API_Gateway.Models.TLPicker.Proto";
+
+service tl_picker {
+  // Takes unittests and translation candidates and picks the correct candidate
+  rpc pick_translation(TLPickerRequest) returns (TLPickerResponse);
+}
+
+enum ReturnCode {
+  SUCCESS = 0;
+  ERROR = 1;
+  FAILED_SOURCE_COMPILE = 2;
+  FAILED_TEST_COMPILE = 3;
+  FAILED_TEST_EXECUTION = 4;
+}
+
+message TLPickerRequest {
+  // Source code project
+  gs.common.CodeProject source_project = 1 [ json_name = "source_project" ];
+  // Candidate Translations
+  repeated gs.common.CodeProject translations = 2 [ json_name = "translated_projects" ];
+  // Tests a successfull translation has to pass
+  gs.common.CodeProject test_project = 3 [ json_name = "test_project" ];
+  // TargetLanguage
+  string target_language = 4 [ json_name = "target_language" ];
+}
+
+message TLPickerResponse {
+  // Output CodeProject if generation was successfull
+  gs.common.CodeProject solution = 1;
+
+  // Unittest output XML
+  string test_output = 2;
+
+  // Error message if an error occured
+  string error = 3;
+
+  // Return code from function picking
+  ReturnCode return_code = 4;
+}

@@ -1,0 +1,8 @@
+version: 1
+apps:
+- appID: webserver
+  appDirPath: ../apps/webserver/
+  appPort: 80
+  daprHttpPort: 3510
+  daprHttpsPort: 3511
+  command: ["python", "app.py"]

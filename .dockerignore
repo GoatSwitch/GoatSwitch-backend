@@ -1,0 +1,4 @@
+generated
+src/goat_service/generated/
+src/gateway/API_Gateway/API_Gateway/bin/
+.dapr/

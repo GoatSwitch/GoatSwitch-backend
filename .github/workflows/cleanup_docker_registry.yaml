@@ -1,0 +1,56 @@
+name: Clean Up Old Docker Images
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 0 * * 0' # Runs every Sunday at midnight
+
+env:
+  ACR_RESOURCE_GROUP: GoatSwitchAI_Azuresponsored
+  AZURE_CONTAINER_REGISTRY: goatswitch
+
+jobs:
+    cleanup:
+        permissions:
+            contents: read
+            id-token: write
+        runs-on: ubuntu-latest
+        steps:
+            - uses: azure/login@v1
+              name: Azure login
+              with:
+                  client-id: ${{ secrets.AZURE_CLIENT_ID }}
+                  subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+                  tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+            - name: Login to Azure Container Registry
+              run: az acr login --name ${{ env.AZURE_CONTAINER_REGISTRY }} -p ${{ secrets.AZ_ACR_SECRET }} -u ${{ secrets.AZURE_CLIENT_ID }}
+            - name: List repositories
+              id: list_repositories
+              run: |
+                # List all repositories in the ACR
+                az acr repository list --name ${{ env.AZURE_CONTAINER_REGISTRY }} --output json > repositories.json
+                echo "Repositories found: $(cat repositories.json)"
+        
+            - name: Process repositories
+              run: |
+                # Iterate over each repository
+                for repo in $(jq -r '.[]' repositories.json); do
+                  echo "Processing repository: $repo"
+        
+                  # List all image manifests in the repository and sort them by timestamp in descending order
+                  az acr repository show-manifests --name ${{ env.AZURE_CONTAINER_REGISTRY }} --repository $repo --orderby time_desc --output json > manifests.json
+        
+                  # Calculate the number of images
+                  total_images=$(jq length manifests.json)
+                  echo "Total images found in $repo: $total_images"
+        
+                  # Retain the two most recent images, delete the rest
+                  if [ $total_images -gt 2 ]; then
+                    jq -r '.[2:] | .[].digest' manifests.json | while read digest; do
+                      echo "Deleting image with digest $digest from repository $repo"
+                      az acr repository delete --name ${{ env.AZURE_CONTAINER_REGISTRY }} --image $repo@${digest} --yes
+                    done
+                  else
+                    echo "No old images to delete in $repo"
+                  fi
+                done

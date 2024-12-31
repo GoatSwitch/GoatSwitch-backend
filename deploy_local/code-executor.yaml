@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: code-executor
+  labels:
+    app: code-executor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: code-executor
+  template:
+    metadata:
+      labels:
+        app: code-executor
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "code-executor"
+        dapr.io/enable-api-logging: "true"
+        dapr.io/app-port: "5001"
+        dapr.io/app-protocol: "grpc"
+        dapr.io/enable-metrics: "true"
+        dapr.io/metrics-port: "9090"
+    spec:
+      containers:
+        - name: code-executor
+          image: goatswitch_code_executor:latest
+          imagePullPolicy: Never
