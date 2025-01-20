@@ -1,6 +1,6 @@
 # GoatSwitch AI
 
-Welcome to Goatswitch. 🐐
+Welcome to Goatswitch. 🐐 🐐
 
 ## Installation
 
